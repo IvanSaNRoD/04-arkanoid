@@ -137,7 +137,25 @@ function updateBall( dt ) {
     b.vy = Math.abs( b.vy );
   }
 
+  collideBricks();
   collidePaddle();
+}
+
+// At most one brick per frame; reflect on the axis with the smaller overlap
+function collideBricks() {
+  const b = state.ball;
+  for ( const r of state.bricks ) {
+    if ( !r.alive || !overlaps( b, r ) ) continue;
+
+    const overlapX = Math.min( b.x + b.size, r.x + r.w ) - Math.max( b.x, r.x );
+    const overlapY = Math.min( b.y + b.size, r.y + r.h ) - Math.max( b.y, r.y );
+    if ( overlapX < overlapY ) b.vx = -b.vx;
+    else b.vy = -b.vy;
+
+    r.alive = false;
+    state.score += r.points;
+    return;
+  }
 }
 
 function overlaps( a, r ) {
