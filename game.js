@@ -154,7 +154,19 @@ function collideBricks() {
 
     r.alive = false;
     state.score += r.points;
+    state.explosions.push( { x: r.x, y: r.y, w: r.w, h: r.h, color: r.color, startTime: performance.now() } );
     return;
+  }
+}
+
+// Purely visual: 4 frames over EXPLOSION_DURATION, removed when finished
+function drawExplosions() {
+  const now = performance.now();
+  const frameTime = EXPLOSION_DURATION / 4;
+  state.explosions = state.explosions.filter( ( ex ) => now - ex.startTime < EXPLOSION_DURATION );
+  for ( const ex of state.explosions ) {
+    const frame = EXPLOSION_FRAMES[ ex.color ][ Math.floor( ( now - ex.startTime ) / frameTime ) ];
+    drawFrame( ctx, frame, ex.x, ex.y, ex.w, ex.h );
   }
 }
 
@@ -196,6 +208,7 @@ function render() {
   ctx.clearRect( 0, 0, CANVAS_W, CANVAS_H );
   drawHud();
   drawBricks();
+  drawExplosions();
   drawPaddle();
   drawBall();
 }
