@@ -107,11 +107,20 @@ function onAction() {
   else if ( state.phase === 'gameover' || state.phase === 'win' ) resetGame();
 }
 
+// P / Esc
+function togglePause() {
+  if ( state.phase === 'playing' ) state.phase = 'paused';
+  else if ( state.phase === 'paused' ) state.phase = 'playing';
+}
+
 function onKey( e, pressed ) {
   if ( KEYS_LEFT.includes( e.code ) ) state.input.left = pressed;
   else if ( KEYS_RIGHT.includes( e.code ) ) state.input.right = pressed;
   else if ( e.code === 'Space' ) {
     if ( pressed && !e.repeat ) onAction();
+  }
+  else if ( e.code === 'KeyP' || e.code === 'Escape' ) {
+    if ( pressed && !e.repeat ) togglePause();
   }
   else return;
   e.preventDefault();
@@ -120,7 +129,12 @@ function onKey( e, pressed ) {
 window.addEventListener( 'keydown', ( e ) => onKey( e, true ) );
 window.addEventListener( 'keyup', ( e ) => onKey( e, false ) );
 
+window.addEventListener( 'blur', () => {
+  if ( state.phase === 'playing' ) state.phase = 'paused';
+} );
+
 canvas.addEventListener( 'mousemove', ( e ) => {
+  if ( state.phase === 'paused' ) return;
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   setPaddleX( mouseX - PADDLE_W / 2 );
@@ -206,6 +220,8 @@ function collidePaddle() {
 }
 
 function update( dt ) {
+  if ( state.phase === 'paused' ) return;
+
   const dir = ( state.input.right ? 1 : 0 ) - ( state.input.left ? 1 : 0 );
   if ( dir !== 0 ) setPaddleX( state.paddle.x + dir * PADDLE_SPEED * dt );
 
@@ -236,6 +252,13 @@ function drawCenteredText( text, y, size ) {
 function drawOverlay() {
   if ( state.phase === 'serve' ) {
     drawCenteredText( 'PRESS SPACE OR CLICK', 400, 18 );
+    return;
+  }
+
+  if ( state.phase === 'paused' ) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect( 0, HUD_H, CANVAS_W, CANVAS_H - HUD_H );
+    drawCenteredText( 'PAUSED', 320, 36 );
     return;
   }
 
