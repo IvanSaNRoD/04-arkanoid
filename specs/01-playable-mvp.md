@@ -1,6 +1,6 @@
 # SPEC 01 — Playable Arkanoid MVP
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** none
 > **Date:** 2026-09-11
 > **Objective:** Build a playable single-level Arkanoid in plain HTML/CSS/JS with paddle, ball, breakable bricks, lives, score, sounds and a persisted high score.
