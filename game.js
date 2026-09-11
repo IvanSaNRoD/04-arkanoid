@@ -73,9 +73,37 @@ function setPaddleX( x ) {
 const KEYS_LEFT = [ 'ArrowLeft', 'KeyA' ];
 const KEYS_RIGHT = [ 'ArrowRight', 'KeyD' ];
 
+function drawBall() {
+  const b = state.ball;
+  drawSprite( ctx, 'ball', b.x, b.y, b.size, b.size );
+}
+
+// Ball centered on top of the paddle
+function stickBallToPaddle() {
+  const p = state.paddle;
+  const b = state.ball;
+  b.x = p.x + p.w / 2 - b.size / 2;
+  b.y = p.y - b.size;
+}
+
+function launchBall() {
+  const angle = state.paddleDir * MIN_BOUNCE_ANGLE;
+  state.ball.vx = BALL_SPEED * Math.sin( angle );
+  state.ball.vy = -BALL_SPEED * Math.cos( angle );
+  state.phase = 'playing';
+}
+
+// Space / click
+function onAction() {
+  if ( state.phase === 'serve' ) launchBall();
+}
+
 function onKey( e, pressed ) {
   if ( KEYS_LEFT.includes( e.code ) ) state.input.left = pressed;
   else if ( KEYS_RIGHT.includes( e.code ) ) state.input.right = pressed;
+  else if ( e.code === 'Space' ) {
+    if ( pressed && !e.repeat ) onAction();
+  }
   else return;
   e.preventDefault();
 }
@@ -89,9 +117,33 @@ canvas.addEventListener( 'mousemove', ( e ) => {
   setPaddleX( mouseX - PADDLE_W / 2 );
 } );
 
+canvas.addEventListener( 'click', onAction );
+
+function updateBall( dt ) {
+  const b = state.ball;
+  b.x += b.vx * dt;
+  b.y += b.vy * dt;
+
+  // Walls: left, right, top (HUD bottom edge)
+  if ( b.x < 0 ) {
+    b.x = 0;
+    b.vx = Math.abs( b.vx );
+  } else if ( b.x + b.size > CANVAS_W ) {
+    b.x = CANVAS_W - b.size;
+    b.vx = -Math.abs( b.vx );
+  }
+  if ( b.y < HUD_H ) {
+    b.y = HUD_H;
+    b.vy = Math.abs( b.vy );
+  }
+}
+
 function update( dt ) {
   const dir = ( state.input.right ? 1 : 0 ) - ( state.input.left ? 1 : 0 );
   if ( dir !== 0 ) setPaddleX( state.paddle.x + dir * PADDLE_SPEED * dt );
+
+  if ( state.phase === 'serve' ) stickBallToPaddle();
+  else if ( state.phase === 'playing' ) updateBall( dt );
 }
 
 function render() {
@@ -99,12 +151,13 @@ function render() {
   drawHud();
   drawBricks();
   drawPaddle();
+  drawBall();
 }
 
 let lastTime = null;
 
 function loop( now ) {
-  const dt = lastTime === null ? 0 : ( now - lastTime ) / 1000;
+  const dt = lastTime === null ? 0 : Math.min( ( now - lastTime ) / 1000, MAX_DT );
   lastTime = now;
   update( dt );
   render();
