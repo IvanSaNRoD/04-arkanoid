@@ -93,9 +93,18 @@ function launchBall() {
   state.phase = 'playing';
 }
 
+function resetGame() {
+  state.score = 0;
+  state.lives = START_LIVES;
+  state.bricks = buildBricks();
+  state.explosions = [];
+  state.phase = 'serve';
+}
+
 // Space / click
 function onAction() {
   if ( state.phase === 'serve' ) launchBall();
+  else if ( state.phase === 'gameover' || state.phase === 'win' ) resetGame();
 }
 
 function onKey( e, pressed ) {
@@ -201,7 +210,43 @@ function update( dt ) {
   if ( dir !== 0 ) setPaddleX( state.paddle.x + dir * PADDLE_SPEED * dt );
 
   if ( state.phase === 'serve' ) stickBallToPaddle();
-  else if ( state.phase === 'playing' ) updateBall( dt );
+  else if ( state.phase === 'playing' ) {
+    updateBall( dt );
+    checkEndConditions();
+  }
+}
+
+function checkEndConditions() {
+  if ( state.ball.y > CANVAS_H ) {
+    state.lives -= 1;
+    state.phase = state.lives > 0 ? 'serve' : 'gameover';
+  } else if ( !state.bricks.some( ( r ) => r.alive ) ) {
+    state.phase = 'win';
+  }
+}
+
+function drawCenteredText( text, y, size ) {
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold ' + size + 'px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText( text, CANVAS_W / 2, y );
+}
+
+function drawOverlay() {
+  if ( state.phase === 'serve' ) {
+    drawCenteredText( 'PRESS SPACE OR CLICK', 400, 18 );
+    return;
+  }
+
+  const title = { gameover: 'GAME OVER', win: 'YOU WIN' }[ state.phase ];
+  if ( !title ) return;
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect( 0, HUD_H, CANVAS_W, CANVAS_H - HUD_H );
+  drawCenteredText( title, 300, 36 );
+  drawCenteredText( 'SCORE ' + state.score, 350, 20 );
+  drawCenteredText( 'PRESS SPACE OR CLICK', 400, 14 );
 }
 
 function render() {
@@ -210,7 +255,8 @@ function render() {
   drawBricks();
   drawExplosions();
   drawPaddle();
-  drawBall();
+  if ( state.phase !== 'gameover' && state.phase !== 'win' ) drawBall();
+  drawOverlay();
 }
 
 let lastTime = null;

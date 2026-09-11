@@ -109,23 +109,23 @@ Conventions:
 ## Acceptance criteria
 
 - [ ] Opening `index.html` via `file://` loads the game with no console errors.
-- [ ] The canvas is 480×640 and centered horizontally on the page.
-- [ ] 54 bricks are drawn in 6 rows of 9, colors top to bottom: red, yellow, cyan, magenta, hotpink, green.
-- [ ] ArrowLeft/ArrowRight and A/D move the paddle.
-- [ ] Moving the mouse over the canvas centers the paddle on the cursor x.
-- [ ] The paddle never goes outside the canvas.
-- [ ] Before launch, the ball stays on top of the paddle and follows it.
-- [ ] Space or click launches the ball at ~15° from vertical, toward the last paddle direction (right if the paddle never moved).
-- [ ] The ball bounces off the left, right and top walls.
-- [ ] Hitting the paddle center sends the ball at ~15° from vertical; hitting an edge sends it at ~60° from vertical.
-- [ ] The ball never travels perfectly vertical (no endless top wall ↔ paddle loop with a still paddle).
-- [ ] Ball speed is the same at 60 Hz and 144 Hz displays.
-- [ ] A brick disappears after one hit and plays a 4-frame explosion.
-- [ ] Breaking a red brick adds 60 points; a green brick adds 10 points.
-- [ ] Losing the ball decrements lives by 1 and returns to serve.
-- [ ] Losing the third ball shows "GAME OVER" with the final score.
-- [ ] Breaking all 54 bricks shows "YOU WIN" with the final score (1890).
-- [ ] Space or click on an end screen starts a new game with score 0, 3 lives and all bricks restored.
+- [x] The canvas is 480×640 and centered horizontally on the page.
+- [x] 54 bricks are drawn in 6 rows of 9, colors top to bottom: red, yellow, cyan, magenta, hotpink, green.
+- [x] ArrowLeft/ArrowRight and A/D move the paddle.
+- [x] Moving the mouse over the canvas centers the paddle on the cursor x.
+- [x] The paddle never goes outside the canvas.
+- [x] Before launch, the ball stays on top of the paddle and follows it.
+- [x] Space or click launches the ball at ~15° from vertical, toward the last paddle direction (right if the paddle never moved).
+- [x] The ball bounces off the left, right and top walls.
+- [x] Hitting the paddle center sends the ball at ~15° from vertical; hitting an edge sends it at ~60° from vertical.
+- [x] The ball never travels perfectly vertical (no endless top wall ↔ paddle loop with a still paddle).
+- [x] Ball speed is the same at 60 Hz and 144 Hz displays.
+- [x] A brick disappears after one hit and plays a 4-frame explosion.
+- [x] Breaking a red brick adds 60 points; a green brick adds 10 points.
+- [x] Losing the ball decrements lives by 1 and returns to serve.
+- [x] Losing the third ball shows "GAME OVER" with the final score.
+- [x] Breaking all 54 bricks shows "YOU WIN" with the final score (1890).
+- [x] Space or click on an end screen starts a new game with score 0, 3 lives and all bricks restored.
 - [ ] P or Esc pauses and resumes; the ball does not jump on resume.
 - [ ] Switching to another window/tab while playing pauses the game.
 - [ ] Bounce sound plays on wall and paddle hits; break sound plays on brick hits.
