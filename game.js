@@ -15,6 +15,15 @@ const state = {
 const canvas = document.getElementById( 'game' );
 const ctx = canvas.getContext( '2d' );
 
+const bounceSound = new Audio( 'assets/sounds/ball-bounce.mp3' );
+const breakSound = new Audio( 'assets/sounds/break-sound.mp3' );
+
+// Restart from the beginning; rejection (autoplay policy) is ignored
+function playSound( audio ) {
+  audio.currentTime = 0;
+  audio.play().catch( () => {} );
+}
+
 function buildBricks() {
   const bricks = [];
   for ( let row = 0; row < BRICK_ROWS; row++ ) {
@@ -148,17 +157,22 @@ function updateBall( dt ) {
   b.y += b.vy * dt;
 
   // Walls: left, right, top (HUD bottom edge)
+  let hitWall = false;
   if ( b.x < 0 ) {
     b.x = 0;
     b.vx = Math.abs( b.vx );
+    hitWall = true;
   } else if ( b.x + b.size > CANVAS_W ) {
     b.x = CANVAS_W - b.size;
     b.vx = -Math.abs( b.vx );
+    hitWall = true;
   }
   if ( b.y < HUD_H ) {
     b.y = HUD_H;
     b.vy = Math.abs( b.vy );
+    hitWall = true;
   }
+  if ( hitWall ) playSound( bounceSound );
 
   collideBricks();
   collidePaddle();
@@ -178,6 +192,7 @@ function collideBricks() {
     r.alive = false;
     state.score += r.points;
     state.explosions.push( { x: r.x, y: r.y, w: r.w, h: r.h, color: r.color, startTime: performance.now() } );
+    playSound( breakSound );
     return;
   }
 }
@@ -217,6 +232,7 @@ function collidePaddle() {
   b.vx = BALL_SPEED * Math.sin( angle );
   b.vy = -BALL_SPEED * Math.cos( angle );
   b.y = p.y - b.size;
+  playSound( bounceSound );
 }
 
 function update( dt ) {

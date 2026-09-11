@@ -108,7 +108,7 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] Opening `index.html` via `file://` loads the game with no console errors.
+- [x] Opening `index.html` via `file://` loads the game with no console errors.
 - [x] The canvas is 480×640 and centered horizontally on the page.
 - [x] 54 bricks are drawn in 6 rows of 9, colors top to bottom: red, yellow, cyan, magenta, hotpink, green.
 - [x] ArrowLeft/ArrowRight and A/D move the paddle.
@@ -128,7 +128,7 @@ Conventions:
 - [x] Space or click on an end screen starts a new game with score 0, 3 lives and all bricks restored.
 - [x] P or Esc pauses and resumes; the ball does not jump on resume.
 - [x] Switching to another window/tab while playing pauses the game.
-- [ ] Bounce sound plays on wall and paddle hits; break sound plays on brick hits.
+- [x] Bounce sound plays on wall and paddle hits; break sound plays on brick hits.
 - [ ] After a game ends with a new record, reloading the page shows it as `HI`.
 - [ ] With localStorage blocked, the game still runs and `HI` works for the session.
 
