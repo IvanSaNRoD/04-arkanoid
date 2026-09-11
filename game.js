@@ -251,9 +251,36 @@ function update( dt ) {
 function checkEndConditions() {
   if ( state.ball.y > CANVAS_H ) {
     state.lives -= 1;
-    state.phase = state.lives > 0 ? 'serve' : 'gameover';
+    if ( state.lives > 0 ) state.phase = 'serve';
+    else endGame( 'gameover' );
   } else if ( !state.bricks.some( ( r ) => r.alive ) ) {
-    state.phase = 'win';
+    endGame( 'win' );
+  }
+}
+
+function endGame( phase ) {
+  state.phase = phase;
+  saveHighScore();
+}
+
+// Missing, invalid or unavailable storage → 0
+function loadHighScore() {
+  try {
+    const raw = localStorage.getItem( HIGHSCORE_KEY );
+    return raw !== null && /^\d+$/.test( raw ) ? parseInt( raw, 10 ) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Only at game end; in-memory value survives if storage is blocked
+function saveHighScore() {
+  if ( state.score <= state.highScore ) return;
+  state.highScore = state.score;
+  try {
+    localStorage.setItem( HIGHSCORE_KEY, String( state.highScore ) );
+  } catch {
+    // storage unavailable: keep session value only
   }
 }
 
@@ -309,6 +336,7 @@ function loop( now ) {
 }
 
 state.bricks = buildBricks();
+state.highScore = loadHighScore();
 
 loadSpritesheet( () => {
   requestAnimationFrame( loop );

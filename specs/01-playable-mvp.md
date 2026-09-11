@@ -129,8 +129,8 @@ Conventions:
 - [x] P or Esc pauses and resumes; the ball does not jump on resume.
 - [x] Switching to another window/tab while playing pauses the game.
 - [x] Bounce sound plays on wall and paddle hits; break sound plays on brick hits.
-- [ ] After a game ends with a new record, reloading the page shows it as `HI`.
-- [ ] With localStorage blocked, the game still runs and `HI` works for the session.
+- [x] After a game ends with a new record, reloading the page shows it as `HI`.
+- [x] With localStorage blocked, the game still runs and `HI` works for the session.
 
 ## Decisions
 
