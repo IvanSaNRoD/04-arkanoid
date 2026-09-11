@@ -1,6 +1,6 @@
 # SPEC 01 — Playable Arkanoid MVP
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** none
 > **Date:** 2026-09-11
 > **Objective:** Build a playable single-level Arkanoid in plain HTML/CSS/JS with paddle, ball, breakable bricks, lives, score, sounds and a persisted high score.
@@ -32,11 +32,14 @@
 - Responsive/scaled canvas, HiDPI handling, touch controls.
 - High-score table (top N, names, dates).
 - Music, volume control, mute toggle.
-- ES modules or multi-file JS architecture.
+- ES modules or splitting JS beyond `constants.js` + `game.js`.
 
 ## Data model
 
+Constants and `ROWS` live in `constants.js`; `state` lives in `game.js`.
+
 ```js
+// constants.js
 // Logical dimensions (px)
 const CANVAS_W = 480, CANVAS_H = 640;
 const HUD_H = 40;                       // top band; playfield top wall is y = HUD_H
@@ -66,6 +69,7 @@ const ROWS = [
   { color: 'green',   points: 10 },
 ];
 
+// game.js
 // Game state
 const state = {
   phase: 'serve',        // 'serve' | 'playing' | 'paused' | 'gameover' | 'win'
@@ -90,8 +94,8 @@ Conventions:
 
 ## Implementation plan
 
-1. Create `index.html`, `style.css` and `game.js` at repo root. `index.html` contains a `<canvas id="game" width="480" height="640">` and loads `assets/spritesheet.js` then `game.js` as classic scripts. `style.css` centers the canvas on a dark background. `game.js` calls `loadSpritesheet` and starts a `requestAnimationFrame` loop that clears the canvas. Manual test: open `index.html` via `file://`, see an empty canvas, no console errors.
-2. Add constants, `ROWS`, `state` and `buildBricks()`. Render the brick grid with `drawSprite(ctx, 'block_<color>', ...)` and a static HUD (`SCORE`, `HI`, `LIVES`). Manual test: 54 bricks visible in 6 colored rows.
+1. Create `index.html`, `style.css`, `constants.js` and `game.js` at repo root. `index.html` contains a `<canvas id="game" width="480" height="640">` and loads `assets/spritesheet.js`, `constants.js`, then `game.js` as classic scripts. `style.css` centers the canvas on a dark background. `game.js` calls `loadSpritesheet` and starts a `requestAnimationFrame` loop that clears the canvas. Manual test: open `index.html` via `file://`, see an empty canvas, no console errors.
+2. Add constants and `ROWS` to `constants.js`; add `state` and `buildBricks()` to `game.js`. Render the brick grid with `drawSprite(ctx, 'block_<color>', ...)` and a static HUD (`SCORE`, `HI`, `LIVES`). Manual test: 54 bricks visible in 6 colored rows.
 3. Render the paddle with `drawSprite(ctx, 'paddle', ...)`. Add keyboard input (keydown/keyup on ArrowLeft/ArrowRight/A/D) and mouse input (`mousemove` on canvas, paddle centered on cursor x, converted via `getBoundingClientRect`). Clamp paddle to `[0, CANVAS_W - PADDLE_W]`. Whenever the paddle x changes, set `state.paddleDir` to the sign of the change. Manual test: paddle moves with both inputs and never leaves the canvas.
 4. Add the `serve` phase: ball sits centered on top of the paddle and follows it. Space or click switches to `playing` and launches the ball upward at `BALL_SPEED` with angle `state.paddleDir * MIN_BOUNCE_ANGLE` (`vx = BALL_SPEED * sin(angle)`, `vy = -BALL_SPEED * cos(angle)`). Add delta-time with `MAX_DT` clamp. Ball bounces off left, right and top (`y = HUD_H`) walls. Manual test: ball launches and bounces on walls.
 5. Add paddle collision: only when `vy > 0`. Compute `offset = (ballCenterX - paddleCenterX) / (PADDLE_W / 2)` clamped to `[-1, 1]`. New angle = `offset * MAX_BOUNCE_ANGLE`. If `|angle| < MIN_BOUNCE_ANGLE`, set `angle = sign * MIN_BOUNCE_ANGLE`, where `sign` is the sign of `offset`, or `state.paddleDir` when `offset === 0`. Set `vx = BALL_SPEED * sin(angle)`, `vy = -BALL_SPEED * cos(angle)`. Place ball just above the paddle. Manual test: hitting the paddle edges sends the ball sideways; hitting the center with a still paddle never sends it straight up.
@@ -104,33 +108,35 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] Opening `index.html` via `file://` loads the game with no console errors.
-- [ ] The canvas is 480×640 and centered horizontally on the page.
-- [ ] 54 bricks are drawn in 6 rows of 9, colors top to bottom: red, yellow, cyan, magenta, hotpink, green.
-- [ ] ArrowLeft/ArrowRight and A/D move the paddle.
-- [ ] Moving the mouse over the canvas centers the paddle on the cursor x.
-- [ ] The paddle never goes outside the canvas.
-- [ ] Before launch, the ball stays on top of the paddle and follows it.
-- [ ] Space or click launches the ball at ~15° from vertical, toward the last paddle direction (right if the paddle never moved).
-- [ ] The ball bounces off the left, right and top walls.
-- [ ] Hitting the paddle center sends the ball at ~15° from vertical; hitting an edge sends it at ~60° from vertical.
-- [ ] The ball never travels perfectly vertical (no endless top wall ↔ paddle loop with a still paddle).
-- [ ] Ball speed is the same at 60 Hz and 144 Hz displays.
-- [ ] A brick disappears after one hit and plays a 4-frame explosion.
-- [ ] Breaking a red brick adds 60 points; a green brick adds 10 points.
-- [ ] Losing the ball decrements lives by 1 and returns to serve.
-- [ ] Losing the third ball shows "GAME OVER" with the final score.
-- [ ] Breaking all 54 bricks shows "YOU WIN" with the final score (1890).
-- [ ] Space or click on an end screen starts a new game with score 0, 3 lives and all bricks restored.
-- [ ] P or Esc pauses and resumes; the ball does not jump on resume.
-- [ ] Switching to another window/tab while playing pauses the game.
-- [ ] Bounce sound plays on wall and paddle hits; break sound plays on brick hits.
-- [ ] After a game ends with a new record, reloading the page shows it as `HI`.
-- [ ] With localStorage blocked, the game still runs and `HI` works for the session.
+- [x] Opening `index.html` via `file://` loads the game with no console errors.
+- [x] The canvas is 480×640 and centered horizontally on the page.
+- [x] 54 bricks are drawn in 6 rows of 9, colors top to bottom: red, yellow, cyan, magenta, hotpink, green.
+- [x] ArrowLeft/ArrowRight and A/D move the paddle.
+- [x] Moving the mouse over the canvas centers the paddle on the cursor x.
+- [x] The paddle never goes outside the canvas.
+- [x] Before launch, the ball stays on top of the paddle and follows it.
+- [x] Space or click launches the ball at ~15° from vertical, toward the last paddle direction (right if the paddle never moved).
+- [x] The ball bounces off the left, right and top walls.
+- [x] Hitting the paddle center sends the ball at ~15° from vertical; hitting an edge sends it at ~60° from vertical.
+- [x] The ball never travels perfectly vertical (no endless top wall ↔ paddle loop with a still paddle).
+- [x] Ball speed is the same at 60 Hz and 144 Hz displays.
+- [x] A brick disappears after one hit and plays a 4-frame explosion.
+- [x] Breaking a red brick adds 60 points; a green brick adds 10 points.
+- [x] Losing the ball decrements lives by 1 and returns to serve.
+- [x] Losing the third ball shows "GAME OVER" with the final score.
+- [x] Breaking all 54 bricks shows "YOU WIN" with the final score (1890).
+- [x] Space or click on an end screen starts a new game with score 0, 3 lives and all bricks restored.
+- [x] P or Esc pauses and resumes; the ball does not jump on resume.
+- [x] Switching to another window/tab while playing pauses the game.
+- [x] Bounce sound plays on wall and paddle hits; break sound plays on brick hits.
+- [x] After a game ends with a new record, reloading the page shows it as `HI`.
+- [x] With localStorage blocked, the game still runs and `HI` works for the session.
 
 ## Decisions
 
-- **Yes:** single classic script `game.js` + `index.html` + `style.css`. Runs from `file://`, no server needed.
+- **Yes:** two classic scripts `constants.js` + `game.js`, plus `index.html` + `style.css`. Runs from `file://`, no server needed. Top-level `const` in classic scripts is shared across scripts, so `game.js` reads the constants directly.
+- **Yes:** `constants.js` holds only immutable config (dimensions, tuning, `ROWS`). Tuning values in one place.
+- **No:** `state` in `constants.js`. It is mutable runtime state, belongs with the game logic.
 - **No:** ES modules. Would require a static server because of CORS on `file://`.
 - **No:** everything inline in `index.html`. Grows badly.
 - **Yes:** fixed 480×640 vertical canvas. Classic Arkanoid shape, bricks scale the 32×16 sprite by 1.5×.
