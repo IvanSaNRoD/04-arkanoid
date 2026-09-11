@@ -136,6 +136,34 @@ function updateBall( dt ) {
     b.y = HUD_H;
     b.vy = Math.abs( b.vy );
   }
+
+  collidePaddle();
+}
+
+function overlaps( a, r ) {
+  return a.x < r.x + r.w && a.x + a.size > r.x &&
+         a.y < r.y + r.h && a.y + a.size > r.y;
+}
+
+// Angle depends on impact point, never closer to vertical than MIN_BOUNCE_ANGLE
+function collidePaddle() {
+  const b = state.ball;
+  const p = state.paddle;
+  if ( b.vy <= 0 || !overlaps( b, p ) ) return;
+
+  const ballCenterX = b.x + b.size / 2;
+  const paddleCenterX = p.x + p.w / 2;
+  const offset = Math.max( -1, Math.min( 1, ( ballCenterX - paddleCenterX ) / ( PADDLE_W / 2 ) ) );
+
+  let angle = offset * MAX_BOUNCE_ANGLE;
+  if ( Math.abs( angle ) < MIN_BOUNCE_ANGLE ) {
+    const sign = offset === 0 ? state.paddleDir : Math.sign( offset );
+    angle = sign * MIN_BOUNCE_ANGLE;
+  }
+
+  b.vx = BALL_SPEED * Math.sin( angle );
+  b.vy = -BALL_SPEED * Math.cos( angle );
+  b.y = p.y - b.size;
 }
 
 function update( dt ) {
