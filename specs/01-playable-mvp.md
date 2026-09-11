@@ -1,6 +1,6 @@
 # SPEC 01 — Playable Arkanoid MVP
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** none
 > **Date:** 2026-09-11
 > **Objective:** Build a playable single-level Arkanoid in plain HTML/CSS/JS with paddle, ball, breakable bricks, lives, score, sounds and a persisted high score.
@@ -51,6 +51,7 @@ const BALL_SIZE = 12;
 const PADDLE_SPEED = 480;               // px/s (keyboard)
 const BALL_SPEED = 360;                 // px/s, constant
 const MAX_BOUNCE_ANGLE = Math.PI / 3;   // 60° from vertical at paddle edges
+const MIN_BOUNCE_ANGLE = Math.PI / 12;  // 15° from vertical, ball never travels vertically
 const MAX_DT = 1 / 30;                  // s, clamp per frame
 const START_LIVES = 3;
 const HIGHSCORE_KEY = 'arkanoid:highscore:v1';
@@ -76,6 +77,7 @@ const state = {
   bricks: [/* { x, y, w, h, color, points, alive } */],
   explosions: [/* { x, y, w, h, color, startTime } */],
   input: { left: false, right: false },
+  paddleDir: 1,          // last horizontal paddle direction: -1 left, 1 right (default)
 };
 ```
 
@@ -90,9 +92,9 @@ Conventions:
 
 1. Create `index.html`, `style.css` and `game.js` at repo root. `index.html` contains a `<canvas id="game" width="480" height="640">` and loads `assets/spritesheet.js` then `game.js` as classic scripts. `style.css` centers the canvas on a dark background. `game.js` calls `loadSpritesheet` and starts a `requestAnimationFrame` loop that clears the canvas. Manual test: open `index.html` via `file://`, see an empty canvas, no console errors.
 2. Add constants, `ROWS`, `state` and `buildBricks()`. Render the brick grid with `drawSprite(ctx, 'block_<color>', ...)` and a static HUD (`SCORE`, `HI`, `LIVES`). Manual test: 54 bricks visible in 6 colored rows.
-3. Render the paddle with `drawSprite(ctx, 'paddle', ...)`. Add keyboard input (keydown/keyup on ArrowLeft/ArrowRight/A/D) and mouse input (`mousemove` on canvas, paddle centered on cursor x, converted via `getBoundingClientRect`). Clamp paddle to `[0, CANVAS_W - PADDLE_W]`. Manual test: paddle moves with both inputs and never leaves the canvas.
-4. Add the `serve` phase: ball sits centered on top of the paddle and follows it. Space or click switches to `playing` and launches the ball straight up at `BALL_SPEED`. Add delta-time with `MAX_DT` clamp. Ball bounces off left, right and top (`y = HUD_H`) walls. Manual test: ball launches and bounces on walls.
-5. Add paddle collision: only when `vy > 0`. Compute `offset = (ballCenterX - paddleCenterX) / (PADDLE_W / 2)` clamped to `[-1, 1]`. New angle = `offset * MAX_BOUNCE_ANGLE`. Set `vx = BALL_SPEED * sin(angle)`, `vy = -BALL_SPEED * cos(angle)`. Place ball just above the paddle. Manual test: hitting the paddle edges sends the ball sideways.
+3. Render the paddle with `drawSprite(ctx, 'paddle', ...)`. Add keyboard input (keydown/keyup on ArrowLeft/ArrowRight/A/D) and mouse input (`mousemove` on canvas, paddle centered on cursor x, converted via `getBoundingClientRect`). Clamp paddle to `[0, CANVAS_W - PADDLE_W]`. Whenever the paddle x changes, set `state.paddleDir` to the sign of the change. Manual test: paddle moves with both inputs and never leaves the canvas.
+4. Add the `serve` phase: ball sits centered on top of the paddle and follows it. Space or click switches to `playing` and launches the ball upward at `BALL_SPEED` with angle `state.paddleDir * MIN_BOUNCE_ANGLE` (`vx = BALL_SPEED * sin(angle)`, `vy = -BALL_SPEED * cos(angle)`). Add delta-time with `MAX_DT` clamp. Ball bounces off left, right and top (`y = HUD_H`) walls. Manual test: ball launches and bounces on walls.
+5. Add paddle collision: only when `vy > 0`. Compute `offset = (ballCenterX - paddleCenterX) / (PADDLE_W / 2)` clamped to `[-1, 1]`. New angle = `offset * MAX_BOUNCE_ANGLE`. If `|angle| < MIN_BOUNCE_ANGLE`, set `angle = sign * MIN_BOUNCE_ANGLE`, where `sign` is the sign of `offset`, or `state.paddleDir` when `offset === 0`. Set `vx = BALL_SPEED * sin(angle)`, `vy = -BALL_SPEED * cos(angle)`. Place ball just above the paddle. Manual test: hitting the paddle edges sends the ball sideways; hitting the center with a still paddle never sends it straight up.
 6. Add brick collision: AABB test against alive bricks, at most one brick resolved per frame. Reflect `vx` or `vy` based on the smaller overlap axis. Mark brick `alive = false` and add `points` to `state.score`. Manual test: bricks disappear and the HUD score increases by the row value.
 7. Add explosions: on brick break push an entry to `state.explosions`. Draw frame `floor(elapsed / (EXPLOSION_DURATION / 4))` from `EXPLOSION_FRAMES[color]` via `drawFrame`. Remove the entry once `elapsed >= EXPLOSION_DURATION`. Manual test: breaking a brick plays a short 4-frame animation.
 8. Add lives and end conditions. Ball `y > CANVAS_H` → `lives -= 1`. If `lives > 0` → `serve`, else → `gameover`. No alive bricks left → `win`. Draw overlays: `serve` shows "PRESS SPACE OR CLICK", `gameover` shows "GAME OVER" + score, `win` shows "YOU WIN" + score. In `gameover`/`win`, Space/click calls `resetGame()` (score 0, lives 3, bricks rebuilt, explosions cleared, phase `serve`). Manual test: lose 3 balls → game over; restart works.
@@ -109,9 +111,10 @@ Conventions:
 - [ ] Moving the mouse over the canvas centers the paddle on the cursor x.
 - [ ] The paddle never goes outside the canvas.
 - [ ] Before launch, the ball stays on top of the paddle and follows it.
-- [ ] Space or click launches the ball.
+- [ ] Space or click launches the ball at ~15° from vertical, toward the last paddle direction (right if the paddle never moved).
 - [ ] The ball bounces off the left, right and top walls.
-- [ ] Hitting the paddle center sends the ball nearly vertical; hitting an edge sends it at ~60° from vertical.
+- [ ] Hitting the paddle center sends the ball at ~15° from vertical; hitting an edge sends it at ~60° from vertical.
+- [ ] The ball never travels perfectly vertical (no endless top wall ↔ paddle loop with a still paddle).
 - [ ] Ball speed is the same at 60 Hz and 144 Hz displays.
 - [ ] A brick disappears after one hit and plays a 4-frame explosion.
 - [ ] Breaking a red brick adds 60 points; a green brick adds 10 points.
@@ -137,6 +140,10 @@ Conventions:
 - **No:** automatic launch with countdown.
 - **Yes:** paddle bounce angle based on impact point, max 60°. Gives the player aim control.
 - **No:** simple reflection. Produces repetitive loops.
+- **Yes:** minimum bounce angle of 15° from vertical, applied to paddle bounces and to the launch. Walls and bricks only reflect, so the paddle is the only place the angle changes; forbidding vertical there removes the top wall ↔ paddle loop.
+- **Yes:** launch toward the last paddle direction (right by default). Deterministic and player-controllable.
+- **No:** random variation on bounces. Not reproducible, makes manual testing harder.
+- **No:** loop detector (N paddle bounces without a brick hit → random nudge). Extra state and randomness for a case the minimum angle already covers.
 - **Yes:** constant ball speed with delta-time. Simple and predictable.
 - **No:** incremental speed. Deferred.
 - **Yes:** single-hit bricks, points by row (60 top → 10 bottom).
@@ -152,15 +159,16 @@ Conventions:
 
 ## Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| Ball tunnels through bricks on a long frame | `dt` clamped to `MAX_DT` (1/30 s) → max 12 px per frame, half a brick height. |
-| Ball hits two bricks in the same frame and reflects twice | Resolve at most one brick collision per frame. |
-| Ball gets stuck inside the paddle | Only collide when `vy > 0`; reposition ball above the paddle after bounce. |
-| Audio blocked before user interaction | First sound only happens after Space/click launch; `play()` rejection is swallowed. |
-| Overlapping sounds cut each other | `currentTime = 0` restart accepted for MVP; audio pooling deferred. |
-| localStorage unavailable (private mode, blocked) | try/catch on read/write; fall back to in-memory `state.highScore`. |
-| Large `dt` after tab switch | Auto-pause on `blur` plus `MAX_DT` clamp. |
+| Risk                                                               | Mitigation                                                                             |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Ball tunnels through bricks on a long frame                        | `dt` clamped to `MAX_DT` (1/30 s) → max 12 px per frame, half a brick height.          |
+| Ball hits two bricks in the same frame and reflects twice          | Resolve at most one brick collision per frame.                                         |
+| Endless vertical loop top wall ↔ paddle (center hit, still paddle) | `MIN_BOUNCE_ANGLE` (15°) on paddle bounces and angled launch; ball never has `vx = 0`. |
+| Ball gets stuck inside the paddle                                  | Only collide when `vy > 0`; reposition ball above the paddle after bounce.             |
+| Audio blocked before user interaction                              | First sound only happens after Space/click launch; `play()` rejection is swallowed.    |
+| Overlapping sounds cut each other                                  | `currentTime = 0` restart accepted for MVP; audio pooling deferred.                    |
+| localStorage unavailable (private mode, blocked)                   | try/catch on read/write; fall back to in-memory `state.highScore`.                     |
+| Large `dt` after tab switch                                        | Auto-pause on `blur` plus `MAX_DT` clamp.                                              |
 
 ## What is **not** in this spec
 
